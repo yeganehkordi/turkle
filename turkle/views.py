@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 def handle_db_lock(func):
     """Decorator that catches database lock errors from sqlite"""
+
     @wraps(func)
     def wrapper(request, *args, **kwargs):
         try:
@@ -38,6 +39,7 @@ def handle_db_lock(func):
                 messages.error(request, u'The database is busy. Please try again.')
                 return redirect(index)
             raise ex
+
     return wrapper
 
 
@@ -49,10 +51,10 @@ def index(request):
     """
     abandoned_assignments = []
     if request.user.is_authenticated:
-        for ha in TaskAssignment.objects.filter(assigned_to=request.user)\
-                                        .filter(completed=False)\
-                                        .filter(task__batch__active=True)\
-                                        .filter(task__batch__project__active=True):
+        for ha in TaskAssignment.objects.filter(assigned_to=request.user) \
+                .filter(completed=False) \
+                .filter(task__batch__active=True) \
+                .filter(task__batch__project__active=True):
             abandoned_assignments.append({
                 'task': ha.task,
                 'task_assignment_id': ha.id
@@ -425,7 +427,7 @@ def parse_date_with_timezone(value):
 def stats_for_user(request, user_id):
     def format_seconds(s):
         """Converts seconds to string"""
-        return '%dh %dm' % (s//3600, (s//60) % 60)
+        return '%dh %dm' % (s // 3600, (s // 60) % 60)
 
     try:
         user = User.objects.get(id=user_id)
@@ -453,7 +455,7 @@ def stats_for_user(request, user_id):
         # adds a day to include assignments completed on the selected end date
         tas = tas.filter(updated_at__lte=end_date + timedelta(days=1))
 
-    projects = Project.objects.filter(batch__task__taskassignment__assigned_to=user).\
+    projects = Project.objects.filter(batch__task__taskassignment__assigned_to=user). \
         distinct()
     batches = Batch.objects.filter(task__taskassignment__assigned_to=user).distinct()
 
@@ -522,6 +524,20 @@ def update_auto_accept(request):
     return JsonResponse({})
 
 
+def get_tasks(request):
+    """
+    Returns the list of tasks for a given batch
+    """
+    tasks = {}
+    for t in Task.objects.all():
+        # get the unique key and batch nane
+        if t.batch.name not in tasks:
+            tasks[t.batch.name] = []
+        tasks[t.batch.name].append(t.pk)
+
+    return JsonResponse(tasks)
+
+
 def user_activity_json(request, user_id):
     if request.user.id != user_id and not request.user.is_staff:
         return JsonResponse({})
@@ -533,9 +549,9 @@ def user_activity_json(request, user_id):
 
     # Create dictionary mapping timestamp (in seconds) to number of TaskAssignments
     # completed at that timestamp
-    completed_at = TaskAssignment.objects.\
-        filter(completed=True).\
-        filter(assigned_to=user).\
+    completed_at = TaskAssignment.objects. \
+        filter(completed=True). \
+        filter(assigned_to=user). \
         values_list('updated_at', flat=True)
     timestamp_counts = defaultdict(int)
     for ca in completed_at:
@@ -615,10 +631,11 @@ def _skip_aware_next_available_task_id(request, batch):
     Returns:
         Task ID (int), or None if no more Tasks are available
     """
+
     def _get_skipped_task_ids_for_batch(session, batch_id):
         batch_id = str(batch_id)
         if 'skipped_tasks_in_batch' in session and \
-           batch_id in session['skipped_tasks_in_batch']:
+                batch_id in session['skipped_tasks_in_batch']:
             return session['skipped_tasks_in_batch'][batch_id]
         else:
             return None
