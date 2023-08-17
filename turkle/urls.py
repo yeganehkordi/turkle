@@ -17,6 +17,7 @@ from .views import (
     stats_for_user,
     update_auto_accept,
     user_activity_json,
+    get_tasks
 )
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
     path('stats/user/<int:user_id>/activity.json', user_activity_json, name='user_activity_json'),
     path('help/', help_page, name='help'),
     path('update_auto_accept/', update_auto_accept, name='update_auto_accept'),
+    path('get_tasks/', get_tasks, name='get_tasks'),
     path('task/<int:task_id>/', preview, name='preview'),
     path('task/<int:task_id>/iframe/', preview_iframe, name='preview_iframe'),
     path('task/<int:task_id>/assignment/<int:task_assignment_id>/return/',
